@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bomb Defusal Field Manual</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; min-height: 100vh; background: #2a2520; font-family: 'Georgia', 'Times New Roman', serif; }
+#manual-wrap { max-width: 900px; margin: 0 auto; background: #d4c9a8; min-height: 100vh; position: relative; padding-bottom: 70px; }
+.manual-page { color: #1a1a1a; font-family: 'Georgia', 'Times New Roman', serif; font-size: 16px; line-height: 1.7; background: linear-gradient(135deg, #f5f0e1 0%, #ebe3cf 40%, #e8dfc8 100%); border: 1px solid #b8a880; box-shadow: inset 0 0 40px rgba(139,119,80,0.15); padding: 40px; position: relative; display: none; }
+.manual-page.active { display: block; }
+.manual-page::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 15% 85%, rgba(139,100,50,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(139,100,50,0.04) 0%, transparent 40%); pointer-events: none; }
+.manual-page h1 { color: #8b0000; font-size: 28px; font-weight: bold; margin: 0 0 20px 0; text-align: center; text-transform: uppercase; letter-spacing: 3px; border-bottom: 3px double #8b0000; padding-bottom: 12px; }
+.manual-page h2 { color: #2c1810; font-size: 20px; font-weight: bold; margin: 24px 0 12px 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #8b6914; padding-bottom: 6px; }
+.manual-page h3 { color: #4a3520; font-size: 18px; font-weight: bold; margin: 16px 0 8px 0; font-style: italic; }
+.manual-page p { margin: 12px 0; text-align: justify; }
+.manual-page ul, .manual-page ol { margin: 12px 0; padding-left: 30px; }
+.manual-page li { margin: 6px 0; }
+.manual-page strong { color: #8b0000; font-weight: bold; }
+.manual-page table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; }
+.manual-page table th { background: #c4b48a; border: 1px solid #8b7b5e; padding: 8px 10px; font-weight: bold; text-align: left; color: #2c1810; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; }
+.manual-page table td { border: 1px solid #a89878; padding: 6px 10px; background: rgba(255,250,235,0.5); }
+.manual-page table tr:nth-child(even) td { background: rgba(200,185,150,0.2); }
+.manual-page .footnote { font-size: 14px; color: #6b5b4a; font-style: italic; margin-top: 24px; padding-top: 12px; border-top: 1px solid #b8a880; }
+.manual-page .warning { color: #8b0000; font-weight: bold; background: rgba(139,0,0,0.08); padding: 12px 16px; border: 1px solid #8b0000; border-left: 4px solid #8b0000; margin: 16px 0; font-style: italic; text-transform: uppercase; font-size: 15px; letter-spacing: 0.5px; }
+.manual-page pre { margin: 8px 0; }
+#manual-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 900px; height: 60px; background: #3a3225; border-top: 2px solid #8b7b5e; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 1000; }
+.nav-btn { background: #4a3f30; color: #e8dfc8; border: 1px solid #8b7b5e; padding: 10px 24px; font-family: 'Georgia', 'Times New Roman', serif; font-size: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+.nav-btn:hover:not(:disabled) { background: #8b7b5e; color: #f5f0e1; }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+#page-info { color: #c4b48a; font-family: 'Georgia', 'Times New Roman', serif; font-style: italic; font-size: 15px; text-align: center; }
+.symbol-sequences-grid { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 16px; }
+.symbol-sequences-grid th, .symbol-sequences-grid td { border: 1px solid #555; padding: 8px; text-align: center; }
+.symbol-sequences-grid .symbol-label { text-align: left; font-weight: bold; }
+.symbol-sequences-grid .symbol-cell { font-size: 22px; min-width: 50px; }
+</style>
+</head>
+<body>
+<div id="manual-wrap"></div>
+<nav id="manual-nav">
+    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">&larr; PREV</button>
+    <div id="page-info"></div>
+    <button class="nav-btn" id="btn-next" onclick="navigate(1)">NEXT &rarr;</button>
+</nav>
+<script>
+var pages = [];
+var currentPage = 0;
+var wrap = document.getElementById('manual-wrap');
+
+function addPage(title, html) { pages.push({ title: title, html: html }); }
+
+// -- COVER --
+addPage('Cover', '\
+<div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:40px;">\
+<div style="border:3px double #8b0000;padding:40px 50px;margin:16px 0;">\
+<p style="font-size:16px;color:#8b0000;letter-spacing:4px;margin:0 0 16px 0;text-transform:uppercase;font-weight:bold;">Department of Explosive Ordnance Disposal</p>\
+<h1 style="font-size:36px;margin:16px 0;border:none;color:#1a1a1a;letter-spacing:3px;padding:0;line-height:1.3;">Bomb Defusal<br>Field Manual</h1>\
+<div style="width:60%;height:2px;background:#8b6914;margin:16px auto;"></div>\
+<p style="font-size:20px;color:#8b0000;margin:16px 0;font-weight:bold;letter-spacing:3px;">CLASSIFIED</p>\
+<p style="font-size:16px;margin:8px 0;color:#4a3520;">Revision 2.0 &mdash; Field Edition</p>\
+</div>\
+<div style="margin:32px 0;text-align:left;width:65%;">\
+<h2 style="color:#2c1810;font-size:20px;margin-bottom:16px;border-bottom:1px solid #8b6914;padding-bottom:8px;">Table of Contents</h2>\
+<ol style="list-style:none;padding:0;font-size:16px;line-height:2.2;color:#2c1810;">\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Introduction</span><span style="color:#8b6914;">2</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Wire Severance</span><span style="color:#8b6914;">3</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Cipher Lock</span><span style="color:#8b6914;">4</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Chromatic Sequence</span><span style="color:#8b6914;">5</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Pattern Recall</span><span style="color:#8b6914;">6</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Glyph Decryption</span><span style="color:#8b6914;">7</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Signal Diagnostics</span><span style="color:#8b6914;">8</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Grid Alignment</span><span style="color:#8b6914;">9</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Power Distribution</span><span style="color:#8b6914;">10</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Appendix A: Signal Indicators</span><span style="color:#8b6914;">11</span></li>\
+<li style="display:flex;justify-content:space-between;border-bottom:1px dotted #b8a880;padding:2px 0;"><span>Appendix B: Power Cells</span><span style="color:#8b6914;">12</span></li>\
+<li style="display:flex;justify-content:space-between;padding:2px 0;"><span>Appendix C: Device Identification</span><span style="color:#8b6914;">13</span></li>\
+</ol></div>\
+<p style="font-size:14px;color:#8b0000;margin-top:24px;font-style:italic;">Unauthorized reproduction or distribution is strictly prohibited.</p>\
+</div>');
+
+// -- INTRO --
+addPage('Introduction', '<h1>INTRODUCTION TO BOMB DEFUSAL</h1>\
+<h2>Overview:</h2>\
+<p>This manual contains classified instructions for defusing improvised explosive devices. Each bomb contains multiple puzzle modules that must be solved before the countdown timer reaches zero. Successful defusal requires teamwork between a <strong>Defuser</strong> and an <strong>Expert</strong>.</p>\
+<h2>How Bombs Work:</h2>\
+<ul>\
+<li><strong>Timer:</strong> All bombs have a visible countdown timer. When it reaches <strong>0:00</strong>, the bomb detonates immediately. The timer may accelerate under certain failure conditions.</li>\
+<li><strong>Modules:</strong> Each bomb contains <strong>2 to 9</strong> puzzle modules. Every module must be successfully solved to defuse the bomb.</li>\
+<li><strong>Strikes:</strong> Incorrect solutions result in strikes. After <strong>1&ndash;3 strikes</strong> (varies by bomb type), the bomb detonates. Some incorrect answers may <strong>speed up the timer</strong> instead of issuing a strike.</li>\
+<li><strong>Metadata:</strong> Each bomb displays unique identifying information (serial number, indicators, batteries) that is required to solve most puzzles.</li>\
+</ul>\
+<h2>Bomb Hazard Types:</h2>\
+<p>On detonation (timer or strikes), effects vary by device. <strong>Pipe bombs</strong> produce a small blast. <strong>Gas bombs</strong> release a toxic cloud that persists for a time and causes gradual health loss and choking; clear the area. <strong>Incendiary devices</strong> create spreading fires in addition to the initial blast; avoid the fire zone. <strong>Briefcase</strong> and <strong>IED</strong> types produce larger conventional explosions. Identify the device type when possible so personnel know what to expect on failure.</p>\
+<h2>Bomb Metadata &mdash; What to Look For:</h2>\
+<table><tr><th style="width:25%;">Item</th><th>Description</th><th style="width:30%;">Example</th></tr>\
+<tr><td style="font-weight:bold;">Serial Number</td><td>6-character alphanumeric code on the casing</td><td style="font-family:monospace;">AB3C5F</td></tr>\
+<tr><td style="font-weight:bold;">Indicators</td><td>3-letter labeled LEDs &mdash; may be lit or unlit</td><td style="font-family:monospace;">SND (lit), CAR (unlit)</td></tr>\
+<tr><td style="font-weight:bold;">Batteries</td><td>AA or D cells in holders &mdash; count total cells</td><td style="font-family:monospace;">2 AA + 1 D = 3 total</td></tr>\
+<tr><td style="font-weight:bold;">Module Count</td><td>Total puzzle panels on the bomb</td><td style="font-family:monospace;">4 modules</td></tr></table>\
+<h2>Team Roles:</h2>\
+<ul>\
+<li><strong>Defuser:</strong> Has direct access to the bomb. Describes what they see to the Expert and physically interacts with the modules.</li>\
+<li><strong>Expert:</strong> Has access to this manual. Interprets puzzle rules and guides the Defuser through each solution.</li>\
+</ul>\
+<h2>Critical Rules of Engagement:</h2>\
+<ol>\
+<li>The Defuser <strong>cannot</strong> see this manual.</li>\
+<li>The Expert <strong>cannot</strong> see the bomb directly.</li>\
+<li>Clear, precise communication is essential for survival.</li>\
+<li>Always gather and verify <strong>all metadata</strong> before attempting any module.</li>\
+<li>Some modules are pure memory &mdash; the Expert may not be able to help with those.</li>\
+</ol>\
+<div class="warning">Read the serial number, indicator states, and battery count FIRST. Most modules require this information.</div>\
+<p class="footnote">Navigate with arrow keys (&larr; &rarr;) or the PREV / NEXT buttons below.</p>');
+
+// -- WIRES --
+addPage('Wire Severance', '<h1>WIRE SEVERANCE MODULE</h1>\
+<p>Identify wire characteristics and cut the correct wire based on configuration rules.</p>\
+<p><strong>Defuser reports:</strong> number of wires, color of each wire (top to bottom, 1st to last), and serial number. <strong>Expert:</strong> use the rules below; say which wire number (1\u2013N) to cut.</p>\
+<h2>Priority rules (check first)</h2>\
+<ul>\
+<li><strong>Rule 1:</strong> If there is a red wire, cut the last red wire.</li>\
+<li><strong>Rule 2:</strong> Unless there is both a red wire and a blue wire \u2014 then cut the last blue wire.</li>\
+</ul>\
+<p>If neither applies, use the wire-count rules below.</p>\
+<h2>3 Wires:</h2>\
+<ul>\
+<li>If there are no red wires, cut wire 2</li>\
+<li>Otherwise, if the last wire is white, cut the last wire</li>\
+<li>Otherwise, if there is more than one blue wire, cut the last blue wire</li>\
+<li>Otherwise, cut the last wire</li>\
+</ul>\
+<h2>4 Wires:</h2>\
+<ul>\
+<li>If there is more than one red wire and the last digit of the serial number is odd, cut the last red wire</li>\
+<li>Otherwise, if the last wire is yellow and there are no red wires, cut wire 1</li>\
+<li>Otherwise, if there is exactly one blue wire, cut wire 1</li>\
+<li>Otherwise, if there is more than one yellow wire, cut the last wire</li>\
+<li>Otherwise, cut wire 2</li>\
+</ul>\
+<h2>5 Wires:</h2>\
+<ul>\
+<li>If the last wire is black and the last digit of the serial number is odd, cut wire 4</li>\
+<li>Otherwise, if there is exactly one red wire and there is more than one yellow wire, cut wire 1</li>\
+<li>Otherwise, if there are no black wires, cut wire 2</li>\
+<li>Otherwise, cut wire 1</li>\
+</ul>\
+<h2>6 Wires:</h2>\
+<ul>\
+<li>If there are no yellow wires and the last digit of the serial number is odd, cut wire 3</li>\
+<li>Otherwise, if there is exactly one yellow wire and there is more than one white wire, cut wire 4</li>\
+<li>Otherwise, if there are no red wires, cut the last wire</li>\
+<li>Otherwise, cut wire 4</li>\
+</ul>\
+<p class="footnote">Wire positions: top to bottom, 1-based. \u201CLast digit\u201D: digit (0\u20139) as-is; letter (A\u2013Z) = alphabet position (A=1\u2026Z=26) then take the last digit only (e.g. N=14\u21924).</p>');
+
+// -- DIALS --
+addPage('Cipher Lock', '<h1>CIPHER LOCK MODULE</h1>\
+<p>This module presents three rotating number displays labeled <strong>D1</strong>, <strong>D2</strong>, and <strong>D3</strong>. Each display cycles through digits 0\u20139 when clicked. The correct 3-digit combination is derived from observable bomb metadata.</p>\
+<h2>Combination Code:</h2>\
+<table><tr><th style="width:15%;">Digit</th><th>Value</th><th style="width:40%;">Source</th></tr>\
+<tr><td style="font-weight:bold;color:#8b0000;">D1</td><td>Number of <strong>batteries</strong> on the bomb</td><td>Count all battery cells (AA and D)</td></tr>\
+<tr><td style="font-weight:bold;color:#8b0000;">D2</td><td>Number of <strong>lit</strong> indicators</td><td>Count only glowing/lit indicator LEDs</td></tr>\
+<tr><td style="font-weight:bold;color:#8b0000;">D3</td><td>Number of <strong>modules</strong> on the bomb</td><td>Count all puzzle panels (including this one)</td></tr></table>\
+<h2>Procedure:</h2>\
+<ol>\
+<li><strong>Defuser:</strong> Count the total batteries on the bomb and report the number.</li>\
+<li><strong>Defuser:</strong> Inspect each indicator label and report how many are <em>lit</em> (glowing).</li>\
+<li><strong>Defuser:</strong> Count the total number of puzzle modules on the bomb.</li>\
+<li><strong>Expert:</strong> Provide the 3-digit code (e.g. \u201c2-1-4\u201d).</li>\
+<li><strong>Defuser:</strong> Click each display to set it to the correct digit, then press <strong>SUBMIT</strong>.</li>\
+</ol>\
+<h2>Edge Cases:</h2>\
+<ul>\
+<li>If a count exceeds 9, enter <strong>9</strong> (the display caps at 9).</li>\
+<li>Unlit indicators do <strong>not</strong> count toward D2 \u2014 only lit ones.</li>\
+<li>Include <em>all</em> modules in the D3 count, even already-solved ones.</li>\
+</ul>\
+<div class="warning">Submitting an incorrect combination results in a strike. Verify all three values before pressing SUBMIT.</div>\
+<p class="footnote">Displays wrap around: clicking past 9 returns to 0. Each click advances by one.</p>');
+
+// -- CIRCUIT --
+addPage('Chromatic Sequence', '<h1>CHROMATIC SEQUENCE MODULE</h1>\
+<p>This module features four large colored buttons: <span style="color:#cc0000;font-weight:bold;">Red</span>, <span style="color:#2266cc;font-weight:bold;">Blue</span>, <span style="color:#ccaa00;font-weight:bold;">Yellow</span>, and <span style="color:#22aa22;font-weight:bold;">Green</span>. The defuser must press exactly <strong>3 buttons in the correct order</strong>. The required sequence is determined by the total number of <strong>modules</strong> on the bomb.</p>\
+<h2>Sequence Lookup Table:</h2>\
+<table><tr><th>Module Count</th><th>1st Press</th><th>2nd Press</th><th>3rd Press</th></tr>\
+<tr><td style="font-weight:bold;">1\u20132 modules</td><td style="color:#cc0000;font-weight:bold;">Red</td><td style="color:#22aa22;font-weight:bold;">Green</td><td style="color:#2266cc;font-weight:bold;">Blue</td></tr>\
+<tr><td style="font-weight:bold;">3 modules</td><td style="color:#2266cc;font-weight:bold;">Blue</td><td style="color:#cc0000;font-weight:bold;">Red</td><td style="color:#ccaa00;font-weight:bold;">Yellow</td></tr>\
+<tr><td style="font-weight:bold;">4+ modules</td><td style="color:#22aa22;font-weight:bold;">Green</td><td style="color:#ccaa00;font-weight:bold;">Yellow</td><td style="color:#cc0000;font-weight:bold;">Red</td></tr></table>\
+<h2>Procedure:</h2>\
+<ol>\
+<li><strong>Defuser:</strong> Count the total number of puzzle modules on the bomb (including solved ones and this module).</li>\
+<li><strong>Defuser:</strong> Report the module count to the Expert.</li>\
+<li><strong>Expert:</strong> Look up the row in the table above and read out the 3-color sequence.</li>\
+<li><strong>Defuser:</strong> Press the three buttons in exactly that order.</li>\
+</ol>\
+<h2>On Incorrect Input:</h2>\
+<ul>\
+<li>Pressing a wrong button at any step results in a <strong>strike</strong>.</li>\
+<li>After a strike, the sequence <strong>resets</strong> \u2014 you must start over from the 1st press.</li>\
+<li>The required sequence does <strong>not change</strong> after a strike; the same combination remains valid.</li>\
+</ul>\
+<h2>Quick Reference:</h2>\
+<div style="background:rgba(0,0,0,0.05);border:1px solid #8b7b5e;padding:12px 20px;margin:12px 0;font-family:monospace;font-size:16px;line-height:2;">\
+1\u20132 modules \u2192 <span style="color:#cc0000;">R</span> <span style="color:#22aa22;">G</span> <span style="color:#2266cc;">B</span><br>\
+3 modules&nbsp;&nbsp;&nbsp;&nbsp; \u2192 <span style="color:#2266cc;">B</span> <span style="color:#cc0000;">R</span> <span style="color:#ccaa00;">Y</span><br>\
+4+ modules&nbsp;&nbsp; \u2192 <span style="color:#22aa22;">G</span> <span style="color:#ccaa00;">Y</span> <span style="color:#cc0000;">R</span></div>\
+<p class="footnote">Module count includes all puzzle panels on the bomb, regardless of solved state. Only three presses are required.</p>');
+
+// -- SEQUENCE --
+addPage('Pattern Recall', '<h1>PATTERN RECALL MODULE</h1>\
+<p>This module tests short-term memory. Four colored quadrants surround a central <strong>PLAY</strong> button. The module flashes a sequence that grows each round, and the defuser must repeat it back exactly.</p>\
+<h2>Round Progression:</h2>\
+<table><tr><th>Round</th><th>Flashes Shown</th><th>Presses Required</th></tr>\
+<tr><td style="text-align:center;">1</td><td style="text-align:center;">1 quadrant flashes</td><td style="text-align:center;">1</td></tr>\
+<tr><td style="text-align:center;">2</td><td style="text-align:center;">2 quadrants flash in sequence</td><td style="text-align:center;">2</td></tr>\
+<tr><td style="text-align:center;">3</td><td style="text-align:center;">3 quadrants flash in sequence</td><td style="text-align:center;">3</td></tr></table>\
+<h2>How to Solve:</h2>\
+<ol>\
+<li>Press the center <strong>PLAY</strong> button to begin. The quadrants will flash in order.</li>\
+<li>After the sequence finishes, press the quadrants in the <strong>same order</strong> they flashed.</li>\
+<li>If correct, the next round begins automatically with one additional flash appended to the sequence.</li>\
+<li>Complete all <strong>3 rounds</strong> to solve the module.</li>\
+</ol>\
+<h2>Replay &amp; Error Handling:</h2>\
+<ul>\
+<li>Press <strong>PLAY</strong> at any time to replay the current round\u2019s sequence. This also resets your input for that round.</li>\
+<li>Pressing a <strong>wrong quadrant</strong> results in a strike and the sequence replays automatically.</li>\
+<li>The sequence itself <strong>does not change</strong> after a mistake \u2014 you just need to try again.</li>\
+</ul>\
+<h2>Strategy Tips:</h2>\
+<ul>\
+<li>This is a <strong>pure memory</strong> module \u2014 no manual lookup is needed. The Expert cannot help directly.</li>\
+<li>Use positional cues (top-left, top-right, bottom-left, bottom-right) to remember the order.</li>\
+<li>If unsure, hit PLAY again before guessing \u2014 replaying has no penalty.</li>\
+<li>The defuser can narrate the colors aloud so the expert can help track the sequence.</li>\
+</ul>\
+<p class="footnote">The module auto-completes after round 3. No SUBMIT button is needed.</p>');
+
+// -- SYMBOLS --
+(function() {
+    var G = { Omega:'\u03A9', Sun:'\u2600', Star:'\u2605', Triangle:'\u25B2', Diamond:'\u25C6', Gear:'\u2699', Spade:'\u2660', Heart:'\u2665', Moon:'\u263E', Snowflake:'\u2744', Club:'\u2663', Arrow:'\u27A4', Atom:'\u269B', Skull:'\u2620' };
+    var S = [['Heart','Skull','Moon','Star'],['Omega','Sun','Triangle','Diamond'],['Gear','Spade','Club','Arrow'],['Atom','Snowflake','Heart','Moon'],['Star','Diamond','Skull','Omega'],['Sun','Triangle','Gear','Spade'],['Moon','Club','Arrow','Atom'],['Snowflake','Heart','Star','Diamond'],['Triangle','Gear','Moon','Skull'],['Spade','Arrow','Omega','Snowflake']];
+    var rows = '';
+    for (var i = 0; i < S.length; i++) {
+        var cells = '';
+        for (var j = 0; j < S[i].length; j++) cells += '<td class="symbol-cell">' + (G[S[i][j]]||'?') + '</td>';
+        rows += '<tr><th class="symbol-label">Serial ends ' + i + '</th>' + cells + '</tr>';
+    }
+    addPage('Glyph Decryption', '<h1>GLYPH DECRYPTION MODULE</h1>\
+<p>The module shows a grid of symbol buttons. Use the serial to get a digit 0\u20139, then the expert reads the <strong>4-symbol sequence</strong> for that digit. Defuser presses those <strong>4 symbols in that order</strong> on the grid.</p>\
+<h2>Serial \u2192 digit (0\u20139)</h2>\
+<ul>\
+<li>If the last character is a <strong>digit (0\u20139)</strong>, use it as-is.</li>\
+<li>If it is a <strong>letter (A\u2013Z)</strong>: A=1, B=2, \u2026 Z=26, then take only the <strong>last digit</strong> (e.g. N=14\u21924, Z=26\u21926).</li>\
+</ul>\
+<h2>4-symbol sequences (press in this order)</h2>\
+<table class="symbol-sequences-grid"><thead><tr><th>Digit</th><th>1st</th><th>2nd</th><th>3rd</th><th>4th</th></tr></thead><tbody>' + rows + '</tbody></table>\
+<p class="warning">Wrong symbol or wrong order causes a strike!</p>');
+})();
+
+// -- PRESSURE --
+addPage('Signal Diagnostics', '<h1>SIGNAL DIAGNOSTICS MODULE</h1>\
+<p>This module displays <strong>all 11 possible indicator labels</strong> as toggle switches. Each switch corresponds to an indicator that may or may not be physically present on the bomb. The defuser must flip the correct switches ON based on the bomb\u2019s serial number and indicator states.</p>\
+<h2>All Indicator Labels:</h2>\
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;font-size:15px;">\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">SND</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">CLR</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">CAR</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">IND</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">FRQ</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">SIG</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">NSA</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">MSA</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">TRN</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">BOB</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-weight:bold;font-family:monospace;">FRK</div>\
+<div style="border:1px solid #555;padding:6px;text-align:center;font-style:italic;color:#6b5b4a;">(11 total)</div></div>\
+<h2>Decision Rule \u2014 First Character of Serial:</h2>\
+<table><tr><th>Serial Starts With</th><th>Action</th></tr>\
+<tr><td style="font-weight:bold;text-align:center;">A\u2013M&nbsp; or&nbsp; 0\u20139</td><td>Turn ON switches for indicators that are <strong>LIT</strong> on the bomb</td></tr>\
+<tr><td style="font-weight:bold;text-align:center;">N\u2013Z</td><td>Turn ON switches for indicators that are <strong>UNLIT</strong> on the bomb</td></tr></table>\
+<h2>Critical Rules:</h2>\
+<ul>\
+<li>Indicators <strong>not present</strong> on the bomb should <strong>always be left OFF</strong>, regardless of the serial rule.</li>\
+<li>Only indicators physically on the bomb are eligible to be toggled ON.</li>\
+<li>A lit indicator = LED is <em>glowing</em>. An unlit indicator = LED is <em>dark</em> but the label is still present.</li>\
+</ul>\
+<h2>Procedure:</h2>\
+<ol>\
+<li><strong>Defuser:</strong> Read the <em>first character</em> of the serial number aloud.</li>\
+<li><strong>Defuser:</strong> For each of the 11 switches on the module, report the label and whether that indicator is: <em>lit</em>, <em>unlit</em>, or <em>not on the bomb</em>.</li>\
+<li><strong>Expert:</strong> Determine the rule (A\u2013M/digit = LIT, N\u2013Z = UNLIT).</li>\
+<li><strong>Expert:</strong> Tell the defuser which switches to flip ON.</li>\
+<li><strong>Defuser:</strong> Toggle the specified switches to ON (green), leave all others OFF, then press <strong>SUBMIT</strong>.</li>\
+</ol>\
+<h2>Worked Example:</h2>\
+<div style="background:rgba(0,0,0,0.05);border:1px solid #8b7b5e;padding:12px 20px;margin:12px 0;font-size:15px;line-height:1.8;">\
+<strong>Serial:</strong> K4R2B7 \u2192 first char = <strong>K</strong> (A\u2013M range) \u2192 turn on <strong>LIT</strong> indicators.<br>\
+<strong>Bomb has:</strong> SND (lit), CAR (unlit), FRK (lit).<br>\
+<strong>Result:</strong> Turn ON: <strong>SND</strong>, <strong>FRK</strong>. Leave CAR off (it\u2019s unlit). Leave all others off (not on bomb).</div>\
+<div class="warning">Submitting an incorrect switch configuration results in a strike and resets all switches to OFF.</div>\
+<p class="footnote">Click a switch to toggle it. Green = ON, Red = OFF. Take your time \u2014 there is no penalty for toggling before submitting.</p>');
+
+// -- TOGGLES --
+addPage('Grid Alignment', '<h1>GRID ALIGNMENT MODULE</h1>\
+<p>Flip switches to match the target LED pattern. Each switch only toggles its <strong>own</strong> light (red \u2194 green). Click any switch that doesn\u2019t match the pattern until the grid matches.</p>\
+<h2>Target Patterns (by Serial Number):</h2>\
+<p>Last character \u2192 digit 0\u20139: if a <strong>digit</strong>, use as-is; if a <strong>letter (A\u2013Z)</strong>, use alphabet position (A=1\u2026Z=26) then take the <strong>last digit</strong> only.</p>\
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0;font-family:monospace;font-size:16px;">\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 0:</strong><pre style="line-height:1.6;color:#00aa00;">X . . X\n. X X .\n. X X .\nX . . X</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 1:</strong><pre style="line-height:1.6;color:#00aa00;">. X X .\nX . . X\nX . . X\n. X X .</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 2:</strong><pre style="line-height:1.6;color:#00aa00;">X X . .\nX X . .\n. . X X\n. . X X</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 3:</strong><pre style="line-height:1.6;color:#00aa00;">. . X X\n. . X X\nX X . .\nX X . .</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 4:</strong><pre style="line-height:1.6;color:#00aa00;">X . X .\n. X . X\nX . X .\n. X . X</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 5:</strong><pre style="line-height:1.6;color:#00aa00;">. X . X\nX . X .\n. X . X\nX . X .</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 6:</strong><pre style="line-height:1.6;color:#00aa00;">X X X .\nX . . .\nX . . .\n. . . X</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 7:</strong><pre style="line-height:1.6;color:#00aa00;">. X X X\n. . . X\n. . . X\nX . . .</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 8:</strong><pre style="line-height:1.6;color:#00aa00;">X . . .\n. X . .\n. . X .\n. . . X</pre></div>\
+<div style="border:1px solid #555;padding:8px;"><strong>Serial ends 9:</strong><pre style="line-height:1.6;color:#00aa00;">. . . X\n. . X .\n. X . .\nX . . .</pre></div></div>\
+<p style="font-size:16px;margin-top:16px;"><strong>Legend:</strong> X = GREEN LED (on), . = RED LED (off)</p>\
+<p class="footnote">Module auto-solves when the grid matches the target pattern.</p>');
+
+// -- FUSES --
+addPage('Power Distribution', '<h1>POWER DISTRIBUTION MODULE</h1>\
+<p>Insert fuses with correct amperage ratings into each labeled slot.</p>\
+<h2>Fuse Ratings:</h2>\
+<p>Each slot requires a specific fuse rating (5A, 10A, 15A, 20A, 25A, or 30A). The required ratings depend on the number of <strong>BATTERIES</strong> on the bomb.</p>\
+<h2>Slot Requirements:</h2>\
+<table><tr><th>Slot</th><th style="text-align:center;">1 Battery</th><th style="text-align:center;">2 Batteries</th><th style="text-align:center;">3+ Batteries</th></tr>\
+<tr><td style="font-weight:bold;">A</td><td style="text-align:center;">5A</td><td style="text-align:center;">10A</td><td style="text-align:center;">15A</td></tr>\
+<tr><td style="font-weight:bold;">B</td><td style="text-align:center;">10A</td><td style="text-align:center;">15A</td><td style="text-align:center;">20A</td></tr>\
+<tr><td style="font-weight:bold;">C</td><td style="text-align:center;">15A</td><td style="text-align:center;">20A</td><td style="text-align:center;">25A</td></tr>\
+<tr><td style="font-weight:bold;">D</td><td style="text-align:center;">20A</td><td style="text-align:center;">25A</td><td style="text-align:center;">30A</td></tr></table>\
+<h2>Instructions:</h2>\
+<ol>\
+<li>Defuser: count batteries on the bomb (1, 2, or 3+)</li>\
+<li>Expert: use the table above \u2014 Slot A, B, C, D get the ratings for that battery count</li>\
+<li>Defuser: drag fuses into slots A\u2013D to match (5A\u201330A as required)</li>\
+<li>Press SUBMIT when all four slots are correct</li>\
+</ol>\
+<div class="warning">WARNING: Submitting with incorrect fuses results in a strike!</div>\
+<p class="footnote">Extra fuses are provided as distractors. Not all fuses will be used.</p>');
+
+// -- APPENDIX A --
+addPage('Appendix A: Signal Indicators', '<h1>APPENDIX A: SIGNAL INDICATORS</h1>\
+<h2>What Are Indicators?</h2>\
+<p>Indicators are small LED-labeled panels found on the bomb casing. Each indicator has a <strong>3-letter label</strong> and may be in one of two states: <strong>lit</strong> (LED is glowing) or <strong>unlit</strong> (LED is dark, but label is still visible). Not all indicators appear on every bomb.</p>\
+<h2>Complete Indicator Reference:</h2>\
+<table><tr><th>Label</th><th>Full Name</th><th>Typical Color</th></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">SND</td><td>Sound</td><td>Green</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">CLR</td><td>Clear</td><td>Yellow</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">CAR</td><td>Carrier</td><td>Red</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">IND</td><td>Indicator</td><td>Blue</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">FRQ</td><td>Frequency</td><td>Orange</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">SIG</td><td>Signal</td><td>Purple</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">NSA</td><td>No Such Agency</td><td>Red</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">MSA</td><td>Maybe Such Agency</td><td>Green</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">TRN</td><td>Trinary</td><td>Yellow</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">BOB</td><td>Bob</td><td>White</td></tr>\
+<tr><td style="font-family:monospace;font-weight:bold;">FRK</td><td>Freak</td><td>Red</td></tr></table>\
+<h2>How to Identify &amp; Report:</h2>\
+<ol>\
+<li>Scan the bomb casing for small rectangular panels with 3-letter text.</li>\
+<li>Note the label printed on each panel (e.g. SND, FRK).</li>\
+<li>Check if the LED next to the label is <strong>glowing</strong> (lit) or <strong>dark</strong> (unlit).</li>\
+<li>Report <em>both</em> the label <strong>and</strong> its state to the Expert (e.g. \u201cSND is lit, CAR is unlit\u201d).</li>\
+</ol>\
+<h2>Which Modules Use Indicators?</h2>\
+<table><tr><th>Module</th><th>How Indicators Are Used</th></tr>\
+<tr><td>Cipher Lock</td><td>D2 = count of <strong>lit</strong> indicators</td></tr>\
+<tr><td>Signal Diagnostics</td><td>All 11 labels shown as switches \u2014 lit/unlit state determines which to flip ON</td></tr></table>\
+<p class="footnote">Typical bombs have 2\u20134 indicators. Always report indicators you do NOT see as \u201cnot present.\u201d</p>');
+
+// -- APPENDIX B --
+addPage('Appendix B: Power Cells', '<h1>APPENDIX B: POWER CELLS</h1>\
+<h2>What Are Batteries?</h2>\
+<p>Batteries are power cells visible on the bomb casing in holders. Count the <strong>total number of individual battery cells</strong>, regardless of type or holder configuration. Both AA and D cells count equally.</p>\
+<h2>Battery Types:</h2>\
+<table><tr><th>Type</th><th>Size</th><th>Typical Holder</th></tr>\
+<tr><td style="font-weight:bold;">AA</td><td>Small cylinder</td><td>1\u20132 per holder</td></tr>\
+<tr><td style="font-weight:bold;">D</td><td>Large cylinder</td><td>1\u20132 per holder</td></tr></table>\
+<h2>Counting Procedure:</h2>\
+<ol>\
+<li>Scan the <strong>entire bomb surface</strong> for battery holders.</li>\
+<li>Count each individual battery cell (not the number of holders).</li>\
+<li>If a holder contains 2 batteries, count <strong>both</strong>.</li>\
+<li>AA and D batteries count equally \u2014 just total them up.</li>\
+</ol>\
+<h2>Example Scenarios:</h2>\
+<table><tr><th>Configuration</th><th>Total Count</th></tr>\
+<tr><td>One holder with 2\u00d7 AA</td><td style="font-weight:bold;text-align:center;">2</td></tr>\
+<tr><td>Two holders, each with 1\u00d7 D</td><td style="font-weight:bold;text-align:center;">2</td></tr>\
+<tr><td>One holder with 1\u00d7 AA + one holder with 2\u00d7 D</td><td style="font-weight:bold;text-align:center;">3</td></tr>\
+<tr><td>No battery holders visible</td><td style="font-weight:bold;text-align:center;">0</td></tr></table>\
+<h2>Which Modules Use Battery Count?</h2>\
+<table><tr><th>Module</th><th>How Batteries Are Used</th></tr>\
+<tr><td>Cipher Lock</td><td>D1 = total power cell count (capped at 9)</td></tr>\
+<tr><td>Power Distribution</td><td>Cell count determines required fuse ratings per slot</td></tr></table>\
+<div class="warning">Many puzzle solutions depend on accurate battery counts. Double-check your count before consulting puzzle instructions.</div>\
+<p class="footnote">Typical bombs contain 0\u20134 batteries.</p>');
+
+// -- APPENDIX C --
+addPage('Appendix C: Device Identification', '<h1>APPENDIX C: DEVICE IDENTIFICATION</h1>\
+<h2>What Is a Serial Number?</h2>\
+<p>Every bomb has a unique <strong>6-character alphanumeric serial number</strong> printed on the casing. This identifier is critical for solving many puzzles. It should be the <strong>first thing</strong> the Defuser reads aloud.</p>\
+<h2>Format Specification:</h2>\
+<ul>\
+<li><strong>Length:</strong> Exactly 6 characters</li>\
+<li><strong>Characters:</strong> Mix of uppercase letters (A\u2013Z) and digits (0\u20139)</li>\
+<li><strong>Example:</strong> <code style="font-size:17px;background:rgba(0,0,0,0.08);padding:2px 8px;border-radius:3px;">AB3C5F</code></li>\
+</ul>\
+<h2>Converting the Last Character to a Digit (0\u20139):</h2>\
+<p>Several modules require the serial\u2019s last character as a single digit:</p>\
+<ul>\
+<li>If it is already a <strong>digit (0\u20139)</strong>, use it as-is.</li>\
+<li>If it is a <strong>letter (A\u2013Z)</strong>: convert to its alphabet position (A=1, B=2, \u2026 Z=26), then take only the <strong>last digit</strong>.</li>\
+</ul>\
+<div style="background:rgba(0,0,0,0.05);border:1px solid #8b7b5e;padding:8px 20px;margin:8px 0;font-family:monospace;font-size:15px;line-height:1.8;">\
+C = 3 \u2192 <strong>3</strong> &nbsp;&nbsp;|&nbsp;&nbsp; N = 14 \u2192 <strong>4</strong> &nbsp;&nbsp;|&nbsp;&nbsp; Z = 26 \u2192 <strong>6</strong> &nbsp;&nbsp;|&nbsp;&nbsp; 7 \u2192 <strong>7</strong></div>\
+<h2>Serial Usage by Module:</h2>\
+<table><tr><th>Module</th><th>What It Uses</th></tr>\
+<tr><td>Wire Severance</td><td>Last digit \u2014 odd vs even</td></tr>\
+<tr><td>Cipher Lock</td><td>Power cells, lit indicators, module count \u2192 3-digit code</td></tr>\
+<tr><td>Chromatic Sequence</td><td>Module count \u2192 3-button press order</td></tr>\
+<tr><td>Pattern Recall</td><td>None (pure memory)</td></tr>\
+<tr><td>Glyph Decryption</td><td>Last digit 0\u20139 \u2192 4-glyph sequence</td></tr>\
+<tr><td>Signal Diagnostics</td><td>First character (A\u2013M / digit = LIT; N\u2013Z = UNLIT)</td></tr>\
+<tr><td>Grid Alignment</td><td>Last digit 0\u20139 \u2192 target LED pattern</td></tr>\
+<tr><td>Power Distribution</td><td>Power cell count \u2192 required fuse ratings</td></tr></table>\
+<h2>Communication Tips:</h2>\
+<ul>\
+<li>Always read the serial aloud <strong>character by character</strong>.</li>\
+<li>Use the NATO phonetic alphabet if needed (Alpha, Bravo, Charlie\u2026).</li>\
+<li>Distinguish similar characters: O vs 0, I vs 1, S vs 5.</li>\
+<li>The Expert should write it down immediately.</li>\
+</ul>\
+<div class="warning">An incorrect serial number will lead to wrong solutions across multiple modules. Verify it twice before starting defusal.</div>');
+
+// Build DOM
+for (var i = 0; i < pages.length; i++) {
+    var div = document.createElement('div');
+    div.className = 'manual-page';
+    div.innerHTML = pages[i].html;
+    wrap.appendChild(div);
+}
+
+function showPage(idx) {
+    currentPage = idx;
+    var all = wrap.querySelectorAll('.manual-page');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+    if (all[idx]) all[idx].classList.add('active');
+    document.getElementById('btn-prev').disabled = (idx === 0);
+    document.getElementById('btn-next').disabled = (idx === pages.length - 1);
+    document.getElementById('page-info').textContent = pages[idx].title + ' (' + (idx + 1) + '/' + pages.length + ')';
+    window.scrollTo(0, 0);
+}
+
+function navigate(dir) {
+    var n = currentPage + dir;
+    if (n >= 0 && n < pages.length) showPage(n);
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); }
+});
+
+showPage(0);
+</script>
+</body>
+</html>
